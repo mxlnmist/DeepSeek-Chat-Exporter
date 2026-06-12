@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Chat Exporter (Markdown & PDF & PNG - English improved version)
 // @namespace    https://github.com/endolith/DeepSeek-Chat-Exporter
-// @version      1.9.0
+// @version      1.9.1
 // @description  Export DeepSeek chat history to Markdown, PDF and PNG formats
 // @author       HSyuf/Blueberrycongee/endolith
 // @license      MIT
@@ -1186,6 +1186,80 @@
   }
 
   // =====================
+  // Export menu layout (issue #11: avoid Share + sources sidebar close)
+  // =====================
+  const EXPORT_MENU_TOP_PX = 56;
+  const EXPORT_MENU_RIGHT_DEFAULT_PX = 25;
+  const EXPORT_MENU_SIDEBAR_GAP_PX = 12;
+
+  let __exportMenuLayoutRaf = 0;
+
+  /**
+   * DeepSeek's sources drawer is a fixed/absolute panel on the right; class names change often,
+   * so detect it by geometry instead of brittle selectors.
+   * @returns {HTMLElement|null}
+   */
+  function findOpenRightSidebar() {
+      const exclude =
+          '.ds-exporter-menu, .ds-settings-panel, #ds-exporter-sweep-notice, #ds-exporter-error-notice, #ds-exporter-print-root, #ds-exporter-png-root';
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let best = null;
+      let bestArea = 0;
+
+      for (const el of document.body.querySelectorAll('div, aside, section')) {
+          if (!(el instanceof HTMLElement)) continue;
+          if (el.matches(exclude) || el.closest(exclude)) continue;
+
+          const st = window.getComputedStyle(el);
+          if (st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) === 0) continue;
+          const pos = st.position;
+          if (pos !== 'fixed' && pos !== 'absolute') continue;
+
+          const rect = el.getBoundingClientRect();
+          if (rect.width < 180 || rect.height < vh * 0.35) continue;
+          if (rect.right < vw - 8) continue;
+          if (rect.left > vw * 0.65) continue;
+
+          const area = rect.width * rect.height;
+          if (area > bestArea) {
+              bestArea = area;
+              best = el;
+          }
+      }
+      return best;
+  }
+
+  function updateExportMenuLayout() {
+      let rightPx = EXPORT_MENU_RIGHT_DEFAULT_PX;
+      const sidebar = findOpenRightSidebar();
+      if (sidebar) {
+          const rect = sidebar.getBoundingClientRect();
+          rightPx = Math.max(
+              EXPORT_MENU_RIGHT_DEFAULT_PX,
+              window.innerWidth - rect.left + EXPORT_MENU_SIDEBAR_GAP_PX
+          );
+      }
+      document.documentElement.style.setProperty('--ds-exporter-menu-top', `${EXPORT_MENU_TOP_PX}px`);
+      document.documentElement.style.setProperty('--ds-exporter-menu-right', `${rightPx}px`);
+  }
+
+  function scheduleExportMenuLayoutUpdate() {
+      if (__exportMenuLayoutRaf) return;
+      __exportMenuLayoutRaf = requestAnimationFrame(() => {
+          __exportMenuLayoutRaf = 0;
+          updateExportMenuLayout();
+      });
+  }
+
+  function watchExportMenuLayout() {
+      updateExportMenuLayout();
+      const observer = new MutationObserver(scheduleExportMenuLayoutUpdate);
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'] });
+      window.addEventListener('resize', scheduleExportMenuLayoutUpdate);
+  }
+
+  // =====================
   // Create Export Menu
   // =====================
   /**
@@ -1194,6 +1268,7 @@
   function createExportMenu() {
       // Create main menu
       const menu = document.createElement("div");
+      menu.id = "ds-exporter-menu";
       menu.className = "ds-exporter-menu";
       menu.innerHTML = `
           <button class="export-btn" id="md-btn" title="Export as Markdown">➡️📝</button>
@@ -1246,6 +1321,7 @@
 
       document.body.appendChild(menu);
       document.body.appendChild(settingsPanel);
+      watchExportMenuLayout();
   }
 
   // =====================
@@ -1254,8 +1330,8 @@
   GM_addStyle(`
   .ds-exporter-menu {
       position: fixed;
-      top: 10px;
-      right: 25px;
+      top: var(--ds-exporter-menu-top, 56px);
+      right: var(--ds-exporter-menu-right, 25px);
       z-index: 999999;
       background: #ffffff;
       border: 1px solid #ddd;
@@ -1294,8 +1370,8 @@
   /* Settings panel styles */
   .ds-settings-panel {
       position: fixed;
-      top: 10px;
-      right: 95px;
+      top: var(--ds-exporter-menu-top, 56px);
+      right: calc(var(--ds-exporter-menu-right, 25px) + 70px);
       z-index: 999998;
       background: #ffffff;
       border: 1px solid #ddd;
