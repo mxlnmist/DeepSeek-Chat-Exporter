@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Chat Exporter (Markdown & PDF & PNG - English improved version)
 // @namespace    https://github.com/endolith/DeepSeek-Chat-Exporter
-// @version      1.9.0
+// @version      1.9.1
 // @description  Export DeepSeek chat history to Markdown, PDF and PNG formats
 // @author       HSyuf/Blueberrycongee/endolith
 // @license      MIT
@@ -1254,7 +1254,7 @@
   GM_addStyle(`
   .ds-exporter-menu {
       position: fixed;
-      top: 10px;
+      top: 48px;
       right: 25px;
       z-index: 999999;
       background: #ffffff;
@@ -1294,7 +1294,7 @@
   /* Settings panel styles */
   .ds-settings-panel {
       position: fixed;
-      top: 10px;
+      top: 48px;
       right: 95px;
       z-index: 999998;
       background: #ffffff;
