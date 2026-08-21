@@ -795,7 +795,7 @@
         const chatUrl = window.location.href;
         const titleForLink = title ? title.replace(/\\/g, '\\\\').replace(/]/g, '\\]') : '';
         let content = title && chatUrl ? `# [${titleForLink}](${chatUrl})\n\n` : title ? `# ${title}\n\n` : '';
-        content += messages.length ? messages.join('\n\n---\n\n') : '';
+        content += messages.length ? messages.join('\n\n') : '';
 
         // Convert LaTeX formats only if enabled
         if (preferences.convertLatexDelimiters) {
