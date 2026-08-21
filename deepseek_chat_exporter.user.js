@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Chat Exporter (Markdown & PDF & PNG - English improved version)
 // @namespace    https://github.com/mxlnmist/DeepSeek-Chat-Exporter
-// @version      1.9.2
+// @version      1.9.3
 // @description  Export DeepSeek chat history to Markdown, PDF and PNG formats
 // @author       HSyuf/Blueberrycongee/mxlnmist
 // @license      MIT
@@ -16,6 +16,7 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // @require      https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+// @require      https://cdn.jsdelivr.net/npm/filenamify@7.0.1/browser.js
 // ==/UserScript==
 
 (function () {
@@ -819,12 +820,11 @@
      */
     function makeFilenameSafe(str, maxLength = 50) {
         if (!str) return '';
-        return str
-            .replace(/[^a-zA-Z0-9-_\s]/g, '') // Remove special characters
-            .replace(/\s+/g, '_')             // Replace spaces with underscores
-            .slice(0, maxLength)              // Truncate to maxLength
-            .replace(/_+$/, '')               // Remove trailing underscores
-            .trim();
+        let safe = filenamify(str, {
+            maxLength: maxLength,
+            replacement: '_'
+        });
+        return safe || 'untitled';
     }
 
     /**
